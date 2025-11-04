@@ -582,8 +582,6 @@ export class AuthController {
 
     // Step 2: Use the new service to get the real-time location from the IP
     const location = await this.geolocationService.getLocationFromIp(ipAddress);
-    console.log(location, 'location');
-    console.log(ipAddress, 'ipAddress');
 
     // Step 3: Assign the fetched data to the DTO
     signinDto.ipAddress = ipAddress;
