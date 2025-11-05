@@ -13,7 +13,6 @@ import {
   CADTransactionStatus,
   CADTransactionType,
 } from 'src/wallets/entities/cad-transaction.entity';
-import { CADTransactionService } from 'src/wallets/services/cad-transaction.service';
 import {
   PaymentRequestEntity,
   PaymentRequestStatus,

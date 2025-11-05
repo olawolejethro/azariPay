@@ -12,10 +12,7 @@ import { OnboardingStage } from './onboarding-stage.entity';
 import { WalletEntity } from 'src/wallets/entities/wallet.entity';
 import { NGNWalletEntity } from 'src/wallets/entities/NGNwallet.entity';
 import { TransactionEntity } from 'src/wallets/entities/transaction.entity';
-import { Portfolio } from 'src/P2P/entities/porfolio.entity';
-import { P2PBuyer } from 'src/P2P/entities/p2p-buyer.entity';
-import { P2PSeller } from 'src/P2P/entities/p2p-seller.entity';
-import { P2PTrade } from 'src/p2p-trade/entities/p2p-trade.entity';
+
 import { getEncryptedTransformer } from 'src/common/encryption/transformers/encryption-transformer.helper';
 import { EncryptionKeyType } from 'src/common/encryption/encryption.service';
 import {
@@ -235,22 +232,6 @@ export class User {
 
   @OneToMany(() => NGNWalletEntity, (wallet) => wallet.user)
   ngnWallets: NGNWalletEntity[];
-
-  @OneToMany(() => Portfolio, (portfolio) => portfolio.user)
-  portfolio: Portfolio[];
-
-  @OneToMany(() => P2PBuyer, (p2p_buyer) => p2p_buyer.user)
-  p2p_buyer: P2PBuyer[];
-
-  // Updated: Split trades into those where user is buyer and those where user is seller
-  @OneToMany(() => P2PTrade, (trade) => trade.buyer)
-  buyerTrades: P2PTrade[];
-
-  @OneToMany(() => P2PTrade, (trade) => trade.seller)
-  sellerTrades: P2PTrade[];
-
-  @OneToMany(() => P2PSeller, (p2p_seller) => p2p_seller.user)
-  p2p_seller: P2PSeller[];
 
   @OneToMany(() => TransactionEntity, (transaction) => transaction.user)
   transactions: TransactionEntity[];

@@ -10,26 +10,18 @@ import { JwtModule } from '@nestjs/jwt';
 import { WalletController } from './controllers/wallet.controller';
 import { TransactionController } from './controllers/transation.controller';
 import { BeneficiaryController } from './controllers/beneficiary.controller';
-import { DotBankController } from './controllers/dot.bank.controller';
-import { AptPayController } from './controllers/aptpay.controller';
-import { CADTransactionController } from './controllers/cadTransaction.comtroller';
-import { SumsubController } from './controllers/sumsub.controller';
+
 import { ReportsController } from './controllers/reportTransaction.controller';
 
 // Services
 import { TransactionService } from './services/transaction.service';
 import { WalletService } from './services/wallet.service';
 import { BeneficiaryService } from './services/beneficiary.service';
-import { PagaService } from './services/paga.service';
-import { DotBankService } from './services/dot.bank.service';
-import { AptPayService } from './services/aptPay.service';
-import { CADTransactionService } from './services/cad-transaction.service';
-import { SumsubService } from './services/sumsub.service';
+
 import { ReportsService } from './services/reportTransaction.service';
 
 // Implementations
 import { NairaWallet } from './implementations/naira-wallet';
-import { CADWallet } from './implementations/cad-wallet';
 import { WalletFactory } from './factories/wallet.factory';
 
 // Entities
@@ -51,7 +43,6 @@ import { TransactionReport } from './entities/reportTransaction.entity';
 import { CountryEntity } from 'src/metadata/entities/country.entity';
 import { User } from 'src/auth/entities/user.entity';
 import { Notification } from 'src/notifications/entities/notification.entity';
-import { P2PSeller } from 'src/P2P/entities/p2p-seller.entity';
 import { FileStore } from 'src/filestore/entities/filestore.entity';
 
 // External modules and services
@@ -82,7 +73,6 @@ import { NotificationModule } from 'src/notifications/notifications.module';
       CADTransactionEntity,
       IdentityVerificationEntity,
       TransactionReport,
-      P2PSeller,
       FileStore,
     ]),
 
@@ -119,10 +109,6 @@ import { NotificationModule } from 'src/notifications/notifications.module';
     WalletController,
     TransactionController,
     BeneficiaryController,
-    DotBankController,
-    AptPayController,
-    CADTransactionController,
-    SumsubController,
     ReportsController,
   ],
 
@@ -132,17 +118,12 @@ import { NotificationModule } from 'src/notifications/notifications.module';
     WalletService,
     WalletFactory,
     NairaWallet,
-    CADWallet,
 
     // External API services
-    PagaService,
-    DotBankService,
-    AptPayService,
 
     // Transaction services
     BeneficiaryService,
-    CADTransactionService,
-    SumsubService,
+
     ReportsService,
 
     // Utility services
@@ -163,9 +144,7 @@ import { NotificationModule } from 'src/notifications/notifications.module';
     WalletService,
     WalletFactory,
     TransactionService,
-    PagaService,
     TypeOrmModule,
-    AptPayService,
     ReportsService, // *** ADD ReportsService to exports ***
   ],
 })

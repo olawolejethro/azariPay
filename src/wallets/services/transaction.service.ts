@@ -18,10 +18,7 @@ import { TransactionStatus } from '../entities/transaction.entity';
 import { WalletEntity } from '../entities/wallet.entity';
 import { NGNWalletEntity } from '../entities/NGNwallet.entity';
 import { CADWalletEntity } from '../entities/CADwallet.entity';
-import {
-  CreateTransactionDto,
-  TransactionFilters,
-} from './cad-transaction.service';
+
 import { User } from 'src/auth/entities/user.entity';
 import {
   StatementFormat,
@@ -445,78 +442,6 @@ export class TransactionService {
   }
 
   /**
-   * Create a new transaction with wallet update
-   */
-  async createTransactionCAD(
-    createDto: CreateTransactionDto,
-  ): Promise<TransactionEntity> {
-    return await this.dataSource.transaction(async (manager) => {
-      let wallet: CADWalletEntity | NGNWalletEntity;
-      let currentBalance: number;
-      let newBalance: number;
-
-      // Get the appropriate wallet based on currency
-      if (createDto.currency === TransactionCurrency.CAD) {
-        wallet = await manager.findOne(CADWalletEntity, {
-          where: { userId: createDto.userId },
-        });
-        if (!wallet) {
-          throw new NotFoundException(
-            `CAD wallet not found for user ${createDto.userId}`,
-          );
-        }
-      } else {
-        wallet = await manager.findOne(NGNWalletEntity, {
-          where: { userId: createDto.userId },
-        });
-        if (!wallet) {
-          throw new NotFoundException(
-            `NGN wallet not found for user ${createDto.userId}`,
-          );
-        }
-      }
-
-      currentBalance = parseFloat(wallet.balance.toString());
-      const transactionAmount = parseFloat(createDto.amount.toFixed(2));
-
-      // If you're still having TypeORM issues, try direct instantiation:
-      const transaction = new TransactionEntity();
-      transaction.userId = createDto.userId;
-      transaction.type = createDto.type as unknown as TransactionType;
-      transaction.amount = transactionAmount;
-      transaction.currency = createDto.currency as TransactionCurrency;
-      transaction.source = createDto.source as unknown as TransactionSource;
-
-      transaction.balanceBefore = currentBalance;
-      transaction.balanceAfter = newBalance;
-      transaction.status = TransactionStatus.COMPLETED;
-      transaction.description = createDto.description;
-      transaction.reference = createDto.reference;
-      transaction.externalTransactionId = createDto.externalTransactionId;
-      transaction.metadata = createDto.metadata;
-      transaction.fee =
-        typeof createDto.fee === 'number'
-          ? createDto.fee
-          : typeof createDto.fee === 'object' &&
-              createDto.fee !== null &&
-              'amount' in createDto.fee
-            ? Number(createDto.fee.amount)
-            : 0;
-      transaction.processedBy = createDto.processedBy || 'system';
-
-      // Set wallet ID based on currency
-      if (createDto.currency === TransactionCurrency.CAD) {
-        transaction.cadWalletId = wallet.id;
-      } else {
-        transaction.ngnWalletId = wallet.id;
-      }
-
-      const savedTransaction = await manager.save(transaction);
-      return savedTransaction;
-    });
-  }
-
-  /**
    * Credit user's wallet (CAD or NGN)
    */
   async creditWallet(
@@ -566,81 +491,6 @@ export class TransactionService {
       externalTransactionId,
       metadata,
     });
-  }
-
-  /**
-   * Get user's transaction history with filters
-   */
-  async getUserTransactions(
-    userId: number,
-    filters?: Partial<TransactionFilters>,
-    limit: number = 50,
-    offset: number = 0,
-  ): Promise<{ transactions: TransactionEntity[]; total: number }> {
-    const queryBuilder = this.transactionRepo
-      .createQueryBuilder('transaction')
-      .leftJoinAndSelect('transaction.cadWallet', 'cadWallet')
-      .leftJoinAndSelect('transaction.ngnWallet', 'ngnWallet')
-      .where('transaction.userId = :userId', { userId });
-
-    // Apply filters
-    if (filters) {
-      if (filters.type) {
-        queryBuilder.andWhere('transaction.type = :type', {
-          type: filters.type,
-        });
-      }
-      if (filters.status) {
-        queryBuilder.andWhere('transaction.status = :status', {
-          status: filters.status,
-        });
-      }
-      if (filters.currency) {
-        queryBuilder.andWhere('transaction.currency = :currency', {
-          currency: filters.currency,
-        });
-      }
-      if (filters.source) {
-        queryBuilder.andWhere('transaction.source = :source', {
-          source: filters.source,
-        });
-      }
-      if (filters.startDate && filters.endDate) {
-        queryBuilder.andWhere(
-          'transaction.createdAt BETWEEN :startDate AND :endDate',
-          {
-            startDate: filters.startDate,
-            endDate: filters.endDate,
-          },
-        );
-      }
-      if (filters.referenceId) {
-        const referenceHash = this.encryptingService.hash(filters.referenceId);
-        queryBuilder.andWhere('transaction.referenceHash = :referenceHash', {
-          referenceHash,
-        });
-      }
-      if (filters.externalTransactionId) {
-        queryBuilder.andWhere(
-          'transaction.externalTransactionId = :externalTransactionId',
-          {
-            externalTransactionId: filters.externalTransactionId,
-          },
-        );
-      }
-    }
-
-    // Get total count
-    const total = await queryBuilder.getCount();
-
-    // Get transactions with pagination
-    const transactions = await queryBuilder
-      .orderBy('transaction.createdAt', 'DESC')
-      .limit(limit)
-      .offset(offset)
-      .getMany();
-
-    return { transactions, total };
   }
 
   /**
@@ -777,51 +627,6 @@ export class TransactionService {
       where: { externalTransactionId },
       relations: ['user', 'cadWallet', 'ngnWallet'],
     });
-  }
-
-  /**
-   * Get wallet summary for specific currency
-   */
-  async getWalletSummary(
-    userId: number,
-    currency: TransactionCurrency,
-  ): Promise<{
-    balance: number;
-    currency: string;
-    recentTransactions: TransactionEntity[];
-    totalTransactions: number;
-  }> {
-    let wallet: CADWalletEntity | NGNWalletEntity;
-
-    if (currency === TransactionCurrency.CAD) {
-      wallet = await this.cadWalletRepository.findOne({
-        where: { userId },
-      });
-    } else {
-      wallet = await this.ngnWalletRepository.findOne({
-        where: { userId },
-      });
-    }
-
-    if (!wallet) {
-      throw new NotFoundException(
-        `${currency} wallet not found for user ${userId}`,
-      );
-    }
-
-    const { transactions, total } = await this.getUserTransactions(
-      userId,
-      { currency },
-      10,
-      0,
-    );
-
-    return {
-      balance: parseFloat(wallet.balance.toString()),
-      currency,
-      recentTransactions: transactions,
-      totalTransactions: total,
-    };
   }
 
   /**

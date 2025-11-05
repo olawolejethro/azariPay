@@ -17,14 +17,11 @@ import { PagaPaymentWebhookService } from './services/paga-payment-webhook.servi
 import { NGNWalletEntity } from 'src/wallets/entities/NGNwallet.entity';
 import { TransactionService } from 'src/wallets/services/transaction.service';
 import { TransactionEntity } from 'src/wallets/entities/transaction.entity';
-import { DotBankController } from 'src/wallets/controllers/dot.bank.controller';
 import { DotBankWebhooksController } from './controllers/dot.bank.controller';
-import { AptPayController } from 'src/wallets/controllers/aptpay.controller';
 import { AptPayWebhookController } from './controllers/aptpay-webhook.controller';
 import { AptPayWebhookService } from './services/aptpay-webhook.service';
 import { FirebaseService } from 'src/firebase/firebase.service';
 import { AptPayWebhookEvent } from './entities/aptpay-webhook-event.entity';
-import { CADTransactionService } from 'src/wallets/services/cad-transaction.service';
 import { CADTransactionEntity } from 'src/wallets/entities/cad-transaction.entity';
 import { DisbursementEntity } from 'src/wallets/entities/disbursement.entity';
 import { PaymentRequestEntity } from 'src/wallets/entities/payment-request.entity';
@@ -60,7 +57,6 @@ import { NotificationService } from 'src/notifications/notifications.service';
     AptPayWebhookService,
     TransactionService,
     FirebaseService,
-    CADTransactionService,
     NotificationService,
   ],
 })

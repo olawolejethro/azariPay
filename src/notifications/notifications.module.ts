@@ -7,12 +7,11 @@ import { Notification } from './entities/notification.entity';
 import { FirebaseModule } from '../firebase/firebase.module';
 import { AuthModule } from '../auth/auth.module';
 import { FirebaseService } from 'src/firebase/firebase.service';
-import { P2PSeller } from 'src/P2P/entities/p2p-seller.entity';
 import { User } from 'src/auth/entities/user.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Notification, P2PSeller, User]),
+    TypeOrmModule.forFeature([Notification, User]),
     forwardRef(() => FirebaseModule),
     forwardRef(() => AuthModule),
   ],

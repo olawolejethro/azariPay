@@ -1,10 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as admin from 'firebase-admin';
-import {
-  TradeStatus,
-  MessageType,
-} from '../p2p-chat/entities/p2p-chat.entity/p2p-chat.entity';
+
 import { LoggerService } from 'src/common/logger/logger.service';
 
 export interface PushNotificationPayload {
@@ -152,123 +149,7 @@ export class FirebaseService {
 
   // --- Firebase Chat Methods ---
 
-  public async createChatRoom(trade: {
-    id: number;
-    buyerId: number;
-    sellerId: number;
-    amount: number;
-    currency: string;
-    convertedAmount: number;
-    convertedCurrency: string;
-    rate: number;
-    paymentMethod: string;
-    status: TradeStatus;
-    paymentTimeLimit?: number;
-  }): Promise<void> {
-    try {
-      const chatRef = this.db.ref(`p2pTrades/${trade.id}`);
-
-      await chatRef.set({
-        tradeId: trade.id,
-        participants: {
-          buyer: trade.buyerId.toString(),
-          seller: trade.sellerId.toString(),
-        },
-        tradeDetails: {
-          amount: trade.amount,
-          currency: trade.currency,
-          convertedAmount: trade.convertedAmount,
-          convertedCurrency: trade.convertedCurrency,
-          rate: trade.rate,
-          paymentMethod: trade.paymentMethod,
-          status: trade.status,
-          paymentTimeLimit: trade.paymentTimeLimit || 1440, // Default 24 hours
-        },
-        createdAt: admin.database.ServerValue.TIMESTAMP,
-        updatedAt: admin.database.ServerValue.TIMESTAMP,
-      });
-    } catch (error) {
-      // this.logger.error(
-      //   `Failed to create chat room: ${error.message}`,
-      //   error.stack,
-      // );
-      throw error;
-    }
-  }
-
   // In firebase.service.ts - Update the addMessage method
-
-  public async addMessage(
-    tradeId: number,
-    message: {
-      id: number;
-      senderId?: number;
-      receiverId?: number;
-      content: string;
-      type: MessageType;
-      metadata?: Record<string, any>;
-      createdAt: Date;
-    },
-  ): Promise<void> {
-    try {
-      const messageRef = this.db.ref(
-        `p2pTrades/${tradeId}/messages/${message.id}`,
-      );
-
-      // Clean the data to remove undefined values
-      const messageData: any = {
-        id: message.id,
-        senderId: message.senderId?.toString() || 'SYSTEM',
-        content: message.content,
-        type: message.type,
-        timestamp: message.createdAt.getTime(),
-        isRead: false,
-      };
-
-      // Only add metadata if it exists and has values
-      if (message.metadata && Object.keys(message.metadata).length > 0) {
-        // Filter out undefined values from metadata
-        messageData.metadata = Object.fromEntries(
-          Object.entries(message.metadata).filter(([_, v]) => v !== undefined),
-        );
-      }
-
-      await messageRef.set(messageData);
-
-      // Update trade's lastMessage fields
-      await this.db.ref(`p2pTrades/${tradeId}`).update({
-        lastMessage: message.content,
-        lastMessageTime: message.createdAt.getTime(),
-        updatedAt: admin.database.ServerValue.TIMESTAMP,
-      });
-
-      console.log(`Message ${message.id} added to trade ${tradeId}`);
-    } catch (error) {
-      console.log(error, 'error');
-      this.logger.error(`Failed to add message: ${error.message}`, error.stack);
-      throw error;
-    }
-  }
-
-  public async updateTradeStatus(
-    tradeId: number,
-    status: TradeStatus,
-  ): Promise<void> {
-    try {
-      await this.db.ref(`p2pTrades/${tradeId}/tradeDetails`).update({ status });
-      await this.db.ref(`p2pTrades/${tradeId}`).update({
-        updatedAt: admin.database.ServerValue.TIMESTAMP,
-      });
-
-      this.logger.log(`Updated trade ${tradeId} status to ${status}`);
-    } catch (error) {
-      this.logger.error(
-        `Failed to update trade status: ${error.message}`,
-        error.stack,
-      );
-      throw error;
-    }
-  }
 
   public async sendPushNotification(
     token: string,
@@ -356,60 +237,6 @@ export class FirebaseService {
     } catch (error) {
       this.logger.error(
         `Failed to create negotiation chat room: ${error.message}`,
-        error.stack,
-      );
-      throw error;
-    }
-  }
-
-  public async addNegotiationMessage(
-    negotiationId: number,
-    message: {
-      id: number;
-      senderId?: number;
-      receiverId?: number;
-      content: string;
-      type: MessageType;
-      metadata?: Record<string, any>;
-      createdAt: Date;
-    },
-  ): Promise<void> {
-    try {
-      const messageRef = this.db.ref(
-        `p2pNegotiations/${negotiationId}/messages/${message.id}`,
-      );
-
-      const messageData: any = {
-        id: message.id,
-        senderId: message.senderId?.toString() || 'SYSTEM',
-        receiverId: message.receiverId?.toString() || null,
-        content: message.content,
-        type: message.type,
-        timestamp: message.createdAt.getTime(),
-        isRead: false,
-      };
-
-      if (message.metadata && Object.keys(message.metadata).length > 0) {
-        messageData.metadata = Object.fromEntries(
-          Object.entries(message.metadata).filter(([_, v]) => v !== undefined),
-        );
-      }
-
-      await messageRef.set(messageData);
-
-      // Update negotiation's lastMessage fields
-      await this.db.ref(`p2pNegotiations/${negotiationId}`).update({
-        lastMessage: message.content,
-        lastMessageTime: message.createdAt.getTime(),
-        updatedAt: admin.database.ServerValue.TIMESTAMP,
-      });
-
-      this.logger.log(
-        `Message ${message.id} added to negotiation ${negotiationId}`,
-      );
-    } catch (error) {
-      this.logger.error(
-        `Failed to add negotiation message: ${error.message}`,
         error.stack,
       );
       throw error;

@@ -8,7 +8,6 @@ import {
 } from './entities/notification.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { P2PSeller } from 'src/P2P/entities/p2p-seller.entity';
 import { NotificationType } from './dto/create-notification.dto/create-notification.dto';
 import { User } from 'src/auth/entities/user.entity';
 
@@ -17,8 +16,6 @@ export class NotificationService {
   private readonly logger = new Logger(NotificationService.name);
 
   constructor(
-    @InjectRepository(P2PSeller)
-    private readonly sellerRepository: Repository<P2PSeller>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     @InjectRepository(Notification)
@@ -54,37 +51,6 @@ export class NotificationService {
       let pushSent = false;
 
       // Send push notification if requested
-      if (params.sendPush !== false) {
-        const seller = await this.sellerRepository.findOne({
-          where: { id: params.otherUserId },
-        });
-        // const user = await this.usersService.findUserById(params.sellerId);
-        console.log(seller.user.fcmToken, 'seller.user.fcmToken');
-        if (seller.user.fcmToken) {
-          const result = await this.firebaseService.notifyByPush({
-            notification: {
-              title: params.title,
-              body: params.body,
-              imageUrl: params.imageUrl,
-            },
-            data: {
-              notificationId: String(notification.id),
-              ...(params.data ? this.stringifyDataValues(params.data) : {}),
-              action: params.action || '',
-            },
-            token: seller.user.fcmToken,
-          });
-
-          pushSent = result.status;
-
-          // Update notification with sent status
-          if (pushSent) {
-            notification.isSent = true;
-            notification.sentAt = new Date();
-            await this.notificationRepository.save(notification);
-          }
-        }
-      }
 
       return { notification, pushSent };
     } catch (error) {

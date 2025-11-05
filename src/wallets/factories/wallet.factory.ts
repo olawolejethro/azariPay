@@ -5,29 +5,21 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { NGNWalletEntity, NGNWalletStatus } from '../entities/NGNwallet.entity';
 import { CADWalletEntity, CADWalletStatus } from '../entities/CADwallet.entity';
-import {
-  IWallet,
-  WalletCurrency,
-  WalletStatus,
-} from '../interfaces/wallet.interface';
+import { WalletCurrency } from '../interfaces/wallet.interface';
 import { NairaWallet } from '../implementations/naira-wallet';
-import { CADWallet } from '../implementations/cad-wallet';
 
-import { PagaService } from '../services/paga.service';
 import {
   generateAccountReference,
   generatePagaReferenceNumber,
 } from '../utils/generate.ref';
 import { AuthService } from '../../auth/services/auth.service';
 import { User } from 'src/auth/entities/user.entity';
-import { DotBankService } from '../services/dot.bank.service';
-import { AptPayService } from '../services/aptPay.service';
+
 import { EncryptionService } from 'src/common/encryption/encryption.service';
 
 @Injectable()
 export class WalletFactory {
   private readonly logger = new Logger(WalletFactory.name);
-
   constructor(
     @InjectRepository(NGNWalletEntity)
     private readonly ngnWalletRepo: Repository<NGNWalletEntity>,
@@ -35,63 +27,12 @@ export class WalletFactory {
     private readonly cadWalletRepo: Repository<CADWalletEntity>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    private readonly pagaService: PagaService,
-    private readonly aptPaymentService: AptPayService,
     private readonly encryptionService: EncryptionService,
     private readonly ngnWallet: NairaWallet,
-    private readonly cadWallet: CADWallet,
-    // private readonly authservice: AuthService,
-    private readonly dotBankService: DotBankService,
   ) {}
 
-  private async createPersistentAccount(userId: number): Promise<any> {
-    try {
-      // Get user details for Paga account creation
-      const user = await this.userRepository.findOne({ where: { id: userId } });
-      if (!user) {
-        throw new BadRequestException('User not found');
-      }
-      const referenceNumber = generatePagaReferenceNumber();
-      const accountReference = generateAccountReference();
-      // Create persistent account with Paga
-      const pagaAccount = await this.pagaService.registerAccount({
-        firstName: user.firstName,
-        lastName: user.lastName,
-        phoneNumber: '08100000000',
-        accountReference,
-        referenceNumber,
-        callbackUrl:
-          'https://bongopay-api.peachblossoms.ng/paga/webhooks/payment',
-      });
-
-      return {
-        referenceNumber: pagaAccount.referenceNumber,
-        statusCode: '0',
-        statusMessage: 'success',
-        accountReference: pagaAccount.accountReference,
-        accountNumber: pagaAccount.accountNumber,
-      };
-    } catch (error) {
-      console.log(error, 'error');
-      this.logger.error(
-        'Failed to create persistent account with Paga',
-        error.stack,
-      );
-      throw new BadRequestException(
-        'Failed to create persistent account. Please try again later.',
-      );
-    }
-  }
   async createWallet(userId: number): Promise<{
     ngnWallet: {
-      id: number;
-      userId: number;
-      currency: WalletCurrency;
-      isActive: boolean;
-      createdAt: Date;
-      updatedAt: Date;
-    };
-    cadWallet: {
       id: number;
       userId: number;
       currency: WalletCurrency;
@@ -104,14 +45,6 @@ export class WalletFactory {
     const existingNGN = await this.ngnWalletRepo.findOne({
       where: { userId },
     });
-
-    const existingCAD = await this.cadWalletRepo.findOne({
-      where: { userId },
-    });
-
-    if (existingNGN || existingCAD) {
-      throw new BadRequestException('User already has one or more wallets');
-    }
 
     const referenceNumber = generatePagaReferenceNumber();
     const accountReference = generateAccountReference();
@@ -147,11 +80,6 @@ export class WalletFactory {
 
       this.logger.log(
         `Attempting DotBank virtual account creation for user ${userId}`,
-      );
-
-      virtualAccountResult = await this.dotBankService.createVirtualAccount(
-        virtualAccountData,
-        userId,
       );
 
       if (
@@ -193,8 +121,6 @@ export class WalletFactory {
 
     try {
       this.logger.log(`Attempting AptPay identity creation for user ${userId}`);
-
-      await this.aptPaymentService.createAptPayIdentity(userId);
 
       aptPayStatus = 'SUCCESS';
       this.logger.log(
@@ -288,12 +214,6 @@ export class WalletFactory {
         accountNumber: savedNGNWallet.accountNumber,
       });
 
-      (this.cadWallet as any).initialize({
-        id: savedCADWallet.id,
-        userId: savedCADWallet.userId,
-        currency: WalletCurrency.CAD,
-      });
-
       // 📊 Log comprehensive success/failure status
       this.logger.log(`✅ Successfully created wallets for user ${userId}`, {
         ngnWalletId: savedNGNWallet.id,
@@ -311,7 +231,6 @@ export class WalletFactory {
 
       return {
         ngnWallet: this.ngnWallet.walletData,
-        cadWallet: this.cadWallet.walletData,
       };
     } catch (error) {
       this.logger.error(

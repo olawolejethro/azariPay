@@ -18,18 +18,12 @@ import { MetadataModule } from './metadata/metadata.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { WalletModule } from './wallets/wallet.module';
 import { PinManagementModule } from './pin-management/pin-management.module';
-import { CurrencyConversionService } from './currency-conversion/conversion/conversion.service';
-import { ExchangeRatesApiService } from './currency-conversion/exchange-rates-api/services/exchange-rates-api.service';
-import { ConversionController } from './currency-conversion/conversion/conversion.controller';
-import { CurrencyConversionModule } from './currency-conversion/currency-conversion.module';
-import { ExchangeRatesController } from './currency-conversion/exchange-rates-api/controllers/exchange-rates.controller';
-import { P2PModule } from './P2P/p2p-module';
+
 import { FirebaseModule } from './firebase/firebase.module';
 import { FirebaseController } from './firebase/firebase.controller';
 import { FirebaseService } from './firebase/firebase.service';
 import { NotificationModule } from './notifications/notifications.module';
-import { P2PChatModule } from './p2p-chat/p2p-chat.module';
-import { P2PTradeModule } from './p2p-trade/p2p-trade.module';
+
 import { CustomThrottlerGuard } from './auth/guards/custom-throttler.guard';
 // import { CustomThrottlerGuard } from './common/guards/custom-throttler.guard';
 
@@ -101,24 +95,14 @@ import { CustomThrottlerGuard } from './auth/guards/custom-throttler.guard';
     FileStoreModule,
     WalletModule,
     WebhooksModule,
-    CurrencyConversionModule,
-    P2PModule,
     PinManagementModule,
     FirebaseModule,
     NotificationModule,
-    P2PChatModule,
-    P2PTradeModule,
   ],
-  controllers: [
-    AppController,
-    ConversionController,
-    ExchangeRatesController,
-    FirebaseController,
-  ],
+  controllers: [AppController, FirebaseController],
   providers: [
     AppService,
-    CurrencyConversionService,
-    ExchangeRatesApiService,
+
     FirebaseService,
     // ✅ Enable global rate limiting with custom guard
     {
